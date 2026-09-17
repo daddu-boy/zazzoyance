@@ -51,9 +51,28 @@ async function complete(messages, { json = false, maxTokens = 4096, effort = 'lo
   // Thinking is kept low: 'minimal' answers in ~2s, 'low' in ~5s on gemini-3.6-flash.
   const body = { model, messages, max_tokens: maxTokens, reasoning_effort: effort };
 
-  let r;
+  let r = await send(m, s, body);
+  // Gemini occasionally returns a transient 5xx/429; one retry clears almost all of them.
+  if ([429, 500, 502, 503, 504].includes(r.status)) {
+    await new Promise((res) => setTimeout(res, 1200));
+    r = await send(m, s, body);
+  }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(errorMessage(j, r.status));
+  const text = j.choices?.[0]?.message?.content ?? '';
+  if (!json) return text;
   try {
-    r = m === 'server'
+    return JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ''));
+  } catch {
+    const m2 = text.match(/\{[\s\S]*\}/);
+    if (m2) return JSON.parse(m2[0]);
+    throw new Error('The stylist replied in an unexpected format. Try again.');
+  }
+}
+
+async function send(m, s, body) {
+  try {
+    return m === 'server'
       ? await fetch('/api/ai', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-app-passcode': s.passcode || '' },
@@ -66,17 +85,6 @@ async function complete(messages, { json = false, maxTokens = 4096, effort = 'lo
       });
   } catch {
     throw new Error(navigator.onLine === false ? 'you are offline' : 'could not reach the AI service');
-  }
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(errorMessage(j, r.status));
-  const text = j.choices?.[0]?.message?.content ?? '';
-  if (!json) return text;
-  try {
-    return JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ''));
-  } catch {
-    const m2 = text.match(/\{[\s\S]*\}/);
-    if (m2) return JSON.parse(m2[0]);
-    throw new Error('The stylist replied in an unexpected format. Try again.');
   }
 }
 
