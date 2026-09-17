@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Drape — your stylist</title>
+  <meta name="description" content="Photograph your clothes. Drape learns your wardrobe and tells you what to wear for the weather and the day.">
+  <meta name="theme-color" content="#f6f1ea" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16130f" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">D</span><span>Drape</span></div>
+    <button class="ai-pill" id="aiPill" data-go="settings" title="AI status">…</button>
+  </header>
+
+  <main>
+    <!-- TODAY -->
+    <section class="view" id="view-today" data-view="today">
+      <div class="weather card" id="weatherCard">
+        <div class="muted">Finding your weather…</div>
+      </div>
+
+      <div class="row-between">
+        <div class="seg" id="daySeg">
+          <button data-day="0" class="on">Today</button>
+          <button data-day="1">Tomorrow</button>
+        </div>
+        <button class="link" id="changePlace">Change place</button>
+      </div>
+
+      <h2 class="h">What's the plan?</h2>
+      <div class="chips" id="occasionChips"></div>
+
+      <button class="btn primary block" id="styleMe">Style me</button>
+
+      <div id="suggestions"></div>
+    </section>
+
+    <!-- CLOSET -->
+    <section class="view" id="view-closet" data-view="closet" hidden>
+      <div class="row-between">
+        <div class="seg" id="closetSeg">
+          <button data-tab="items" class="on">Pieces</button>
+          <button data-tab="looks">Looks</button>
+        </div>
+        <span class="muted small" id="closetCount"></span>
+      </div>
+      <div class="chips scroll" id="catFilter"></div>
+      <div class="grid" id="closetGrid"></div>
+      <button class="fab" id="addBtn" aria-label="Add clothes">+</button>
+    </section>
+
+    <!-- STYLIST CHAT -->
+    <section class="view chat-view" id="view-stylist" data-view="stylist" hidden>
+      <div class="chat-log" id="chatLog"></div>
+      <div class="chat-suggest chips scroll" id="chatSuggest"></div>
+      <form class="composer" id="composer">
+        <button type="button" class="icon-btn" id="chatAttach" aria-label="Attach photo">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        </button>
+        <div class="composer-main">
+          <div id="attachPreview" hidden></div>
+          <textarea id="chatInput" rows="1" placeholder="Ask your stylist…"></textarea>
+        </div>
+        <button class="icon-btn send" aria-label="Send">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </form>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings" data-view="settings" hidden>
+      <h2 class="h">About you</h2>
+      <div class="card form">
+        <label>Name <input id="setName" placeholder="Optional"></label>
+        <label>I mostly wear
+          <select id="setWear">
+            <option value="mixed">A mix of everything</option>
+            <option value="menswear">Menswear</option>
+            <option value="womenswear">Womenswear</option>
+          </select>
+        </label>
+        <label>Style notes <textarea id="setStyle" rows="2" placeholder="e.g. minimal, earthy tones, no heels, office is business-casual"></textarea></label>
+        <label>Temperature unit
+          <select id="setUnit"><option value="c">°C</option><option value="f">°F</option></select>
+        </label>
+      </div>
+
+      <h2 class="h">AI stylist</h2>
+      <div class="card form">
+        <p class="small" id="aiExplain"></p>
+        <label>OpenAI API key (stored only on this phone)
+          <input id="setKey" type="password" autocomplete="off" placeholder="sk-…">
+        </label>
+        <label>Server passcode (if the host set one)
+          <input id="setPass" type="password" autocomplete="off">
+        </label>
+        <label>Model <input id="setModel" placeholder="gpt-5-mini"></label>
+        <button class="btn" id="testAi">Test connection</button>
+        <p class="small muted">Photos are sent to OpenAI only when AI is on, to identify the clothes. Everything else — your closet, looks and chat — stays on this device.</p>
+      </div>
+
+      <h2 class="h">Your data</h2>
+      <div class="card form">
+        <div class="row">
+          <button class="btn" id="exportBtn">Back up</button>
+          <button class="btn" id="importBtn">Restore</button>
+          <button class="btn danger" id="wipeBtn">Erase all</button>
+        </div>
+        <p class="small muted">Your wardrobe lives in this browser. Back up before clearing browser data or switching phones.</p>
+      </div>
+      <p class="small muted center">Drape MVP · weather by Open-Meteo</p>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button data-go="today" class="on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Today</button>
+    <button data-go="closet"><svg viewBox="0 0 24 24"><path d="M12 5a2 2 0 1 1 2 2c-1 0-2 .6-2 1.6V9l8.5 6.4c.8.6.4 1.6-.5 1.6H4c-.9 0-1.3-1-.5-1.6L12 9"/></svg>Closet</button>
+    <button data-go="stylist"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Stylist</button>
+    <button data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>You</button>
+  </nav>
+
+  <!-- Add sheet -->
+  <dialog class="sheet" id="addSheet">
+    <h3>Add to your closet</h3>
+    <div class="add-option">
+      <div>
+        <strong>Just the clothes</strong>
+        <p class="small muted">Lay a piece flat or hang it up. One photo per piece works best — a flat-lay of several is fine too.</p>
+      </div>
+      <div class="row">
+        <button class="btn primary" data-pick="garment-camera">Camera</button>
+        <button class="btn" data-pick="garment-gallery">Gallery</button>
+      </div>
+    </div>
+    <div class="add-option">
+      <div>
+        <strong>Photos of me wearing them</strong>
+        <p class="small muted">Mirror selfies or outfit shots. Drape picks out each piece you're wearing and saves the outfit as a Look.</p>
+      </div>
+      <div class="row">
+        <button class="btn primary" data-pick="person-camera">Camera</button>
+        <button class="btn" data-pick="person-gallery">Gallery</button>
+      </div>
+    </div>
+    <button class="btn block ghost" data-close>Cancel</button>
+  </dialog>
+
+  <!-- Review detected items -->
+  <dialog class="sheet tall" id="reviewSheet">
+    <h3 id="reviewTitle">Check what we found</h3>
+    <div id="reviewList"></div>
+    <div class="row sticky-actions">
+      <button class="btn ghost" data-close>Discard</button>
+      <button class="btn primary" id="reviewSave">Save</button>
+    </div>
+  </dialog>
+
+  <!-- Item editor -->
+  <dialog class="sheet tall" id="itemSheet">
+    <form id="itemForm" method="dialog"></form>
+  </dialog>
+
+  <!-- Look viewer -->
+  <dialog class="sheet tall" id="lookSheet"></dialog>
+
+  <!-- Place picker -->
+  <dialog class="sheet" id="placeSheet">
+    <h3>Where are you dressing for?</h3>
+    <button class="btn block" id="useGps">Use my current location</button>
+    <form id="placeForm" class="row">
+      <input id="placeQuery" placeholder="Search a city — e.g. Shimla" style="flex:1">
+      <button class="btn primary">Search</button>
+    </form>
+    <div id="placeResults"></div>
+    <button class="btn block ghost" data-close>Close</button>
+  </dialog>
+
+  <input type="file" id="pickGarmentCamera" accept="image/*" capture="environment" hidden>
+  <input type="file" id="pickGarmentGallery" accept="image/*" multiple hidden>
+  <input type="file" id="pickPersonCamera" accept="image/*" capture="user" hidden>
+  <input type="file" id="pickPersonGallery" accept="image/*" multiple hidden>
+  <input type="file" id="pickChat" accept="image/*" hidden>
+  <input type="file" id="pickBackup" accept="application/json,.json" hidden>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
