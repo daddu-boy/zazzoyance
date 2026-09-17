@@ -34,6 +34,30 @@ A person can also paste their own AI Studio key in the **You** tab. It stays in 
 
 **Free tier:** AI Studio keys on the free tier have daily request limits, and Google may use free-tier prompts to improve its products. Turn on billing in AI Studio to raise the limits and get paid-tier data terms.
 
+## Telegram bot
+
+The same stylist also works in Telegram. Send it photos of your clothes, share your location, and ask `/today`.
+
+- Code: `netlify/lib/bot.mjs` (logic, shared prompts from `js/`) and `netlify/edge-functions/telegram.js` (webhook).
+- Storage: each person's closet is one JSON record in **Netlify Blobs** (store `telegram-users`). Photos stay on Telegram's servers; the bot keeps only their `file_id`s.
+- The bot's closet is separate from the web app's closet, which lives on the phone.
+
+**Setup**
+1. In Telegram, message **@BotFather**, send `/newbot`, and copy the token it gives you.
+2. Add these in Netlify → **Project configuration → Environment variables**, as secrets with all scopes:
+
+   | Variable | What it does |
+   |---|---|
+   | `TELEGRAM_BOT_TOKEN` | **Required.** The token from BotFather. |
+   | `TELEGRAM_ALLOWED_USERS` | **Recommended.** Your Telegram user id (ask @userinfobot). Separate several ids with commas. Only these people can use the bot. |
+
+   If there's no allow-list but `APP_PASSCODE` is set, people must send `/join <passcode>` once. With neither, the bot is open to anyone who finds it.
+3. Redeploy (`./deploy.sh`), then open `https://zazzoyance.netlify.app/api/telegram/setup` once. It connects the webhook and reports the bot's status. It never shows the token.
+
+**Commands:** `/today [plan]`, `/tomorrow [plan]`, `/closet`, `/city <name>`, `/photo <n>`, `/wore <n…>`, `/remove <n | a-b>`, `/reset` (clears chat memory), `/clear yes`, `/whoami`. Anything else you type goes to the stylist. A photo whose caption contains a `?` is answered instead of saved.
+
+**Tests:** `npm test` runs the bot against fake Telegram, Gemini and weather services.
+
 ## Where data lives
 
 Everything — photos, closet, looks, chat — is stored **on the device** (IndexedDB). There is no database or account yet. Use **You → Back up** to download a JSON backup (API keys are never included) and **Restore** on another phone. Photos leave the phone only when AI is on, to be read by Google Gemini.

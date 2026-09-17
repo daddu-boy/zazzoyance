@@ -1,0 +1,12 @@
+{
+  "name": "zazzoyance",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "MOCK_AI=1 node dev-server.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^10.0.0"
+  }
+}

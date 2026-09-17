@@ -117,6 +117,11 @@ const TAG_SCHEMA = `{
   }]
 }`;
 
+// Shared with the Telegram bot (netlify/lib/bot.mjs).
+export const TAG_SYSTEM = `You catalogue a person's wardrobe from photos. Categories: ${Object.entries(CATEGORY_HINT).map(([k, v]) => `${k} (${v})`).join('; ')}. ` +
+  'Indian and global clothing are both common — name pieces accurately (kurta, saree, dupatta, nehru jacket, etc.). ' +
+  `Reply with raw JSON only (no markdown fences), shaped exactly like:\n${TAG_SCHEMA}\nIf there is no clothing in the image, return {"look":"","items":[]}.`;
+
 export async function tagPhoto(blob, kind) {
   const url = await blobToDataURL(blob);
   const instructions = kind === 'person'
@@ -125,9 +130,7 @@ export async function tagPhoto(blob, kind) {
   const out = await complete([
     {
       role: 'system',
-      content: `You catalogue a person's wardrobe from photos. Categories: ${Object.entries(CATEGORY_HINT).map(([k, v]) => `${k} (${v})`).join('; ')}. ` +
-        'Indian and global clothing are both common — name pieces accurately (kurta, saree, dupatta, nehru jacket, etc.). ' +
-        `Reply with raw JSON only (no markdown fences), shaped exactly like:\n${TAG_SCHEMA}\nIf there is no clothing in the image, return {"look":"","items":[]}.`,
+      content: TAG_SYSTEM,
     },
     {
       role: 'user',
@@ -175,7 +178,7 @@ export function cleanItem(x = {}) {
 
 // ---------- Styling ----------
 
-function catalogue(items) {
+export function catalogue(items) {
   return items.map((i) => {
     const since = daysSince(i.lastWorn);
     const worn = i.lastWorn ? `last worn ${since === 0 ? 'today' : `${since}d ago`}` : 'not worn yet';
@@ -183,7 +186,7 @@ function catalogue(items) {
   }).join('\n');
 }
 
-function profileText(profile) {
+export function profileText(profile) {
   const bits = [];
   if (profile.name) bits.push(`Name: ${profile.name}.`);
   if (profile.wear && profile.wear !== 'mixed') bits.push(`Mostly wears ${profile.wear}.`);
@@ -191,7 +194,7 @@ function profileText(profile) {
   return bits.join(' ') || 'No profile details given.';
 }
 
-const STYLIST_VOICE = 'You are Zazzoyance, a warm, decisive personal stylist. You only style with clothes the person actually owns (listed in the wardrobe below), ' +
+export const STYLIST_VOICE = 'You are Zazzoyance, a warm, decisive personal stylist. You only style with clothes the person actually owns (listed in the wardrobe below), ' +
   'and you dress for the weather first. Be specific and brief; no filler, no disclaimers. Consider colour harmony, pattern mixing, fabric vs weather, ' +
   'dressiness vs occasion, and avoid repeating pieces worn in the last couple of days.';
 
