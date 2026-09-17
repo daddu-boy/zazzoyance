@@ -9,5 +9,5 @@ if [ -z "${NETLIFY_AUTH_TOKEN:-}" ] && [ -f "$CFG" ]; then
 fi
 set -euo pipefail
 cd "$(dirname "$0")"
-SITE="${NETLIFY_SITE:-zazzoyance}"
+SITE="${NETLIFY_SITE:-fc674ed6-a068-4377-959c-cd4c8b661208}"  # zazzoyance.netlify.app
 npx --yes netlify-cli@latest deploy --prod --dir . --site "$SITE" --message "deploy $(git rev-parse --short HEAD 2>/dev/null || date +%s)"
