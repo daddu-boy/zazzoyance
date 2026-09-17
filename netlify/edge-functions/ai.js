@@ -24,7 +24,7 @@ export default async (request) => {
   }
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   if (!key) return json({ error: 'The server has no OpenAI key configured.' }, 503);
-  if (passcode && request.headers.get('x-drape-passcode') !== passcode) {
+  if (passcode && request.headers.get('x-app-passcode') !== passcode) {
     return json({ error: 'Wrong or missing passcode. Enter it in the You tab.' }, 401);
   }
 

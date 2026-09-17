@@ -63,4 +63,4 @@ http.createServer(async (req, res) => {
   } catch {
     send(res, 404, 'Not found', 'text/plain');
   }
-}).listen(PORT, () => console.log(`Drape dev server on http://localhost:${PORT}${MOCK ? ' (mock AI)' : ''}`));
+}).listen(PORT, () => console.log(`Zazzoyance dev server on http://localhost:${PORT}${MOCK ? ' (mock AI)' : ''}`));

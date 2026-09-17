@@ -37,6 +37,7 @@ async function boot() {
   wireSettings();
   wireSheets();
 
+  $('#todayDate').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
   renderOccasions();
   renderCloset();
   renderChat();
@@ -71,7 +72,7 @@ async function refreshAi() {
       ? 'Using your own OpenAI key from this phone.'
       : srv.configured && srv.passcode
         ? 'This site has AI, but it\'s locked. Enter the passcode the owner gave you — or paste your own OpenAI key.'
-        : 'AI is off. Drape still works — you tag clothes yourself and a built-in stylist picks outfits. Paste an OpenAI API key to switch on photo recognition and the chat stylist.';
+        : 'AI is off. Zazzoyance still works — you tag clothes yourself and a built-in stylist picks outfits. Paste an OpenAI API key to switch on photo recognition and the chat stylist.';
 }
 
 // ---------------- navigation ----------------
@@ -218,7 +219,7 @@ function renderSuggestions({ outfits, missing }, source, note) {
     return;
   }
   box.innerHTML = (note ? `<p class="small muted">${esc(note)}</p>` : '') + outfits.map((o, i) => `
-    <article class="card outfit" style="margin-top:12px">
+    <article class="card outfit" style="margin-top:2px">
       <h3>${esc(o.title)}</h3>
       <div class="outfit-pieces">${o.items.map(pieceHTML).join('')}</div>
       ${o.why ? `<div class="why">${esc(o.why)}</div>` : ''}
@@ -379,7 +380,7 @@ function renderCloset() {
     $('#closetCount').textContent = `${state.looks.length} look${state.looks.length === 1 ? '' : 's'}`;
     grid.innerHTML = state.looks.length
       ? state.looks.map((l) => `<button class="tile" data-look="${l.id}"><img src="${blobURL(l.image)}" alt="" loading="lazy"><span class="label">${esc(l.description || new Date(l.createdAt).toLocaleDateString())}</span></button>`).join('')
-      : `<div class="empty" style="grid-column:1/-1"><strong>No looks yet</strong>Add photos of yourself in an outfit — Drape saves the outfit here and adds each piece to your closet.<br><br><button class="btn primary" data-add>Add a photo</button></div>`;
+      : `<div class="empty" style="grid-column:1/-1"><strong>No looks yet</strong>Add photos of yourself in an outfit — Zazzoyance saves the outfit here and adds each piece to your closet.<br><br><button class="btn primary" data-add>Add a photo</button></div>`;
     return;
   }
   filter.hidden = false;
@@ -393,7 +394,7 @@ function renderCloset() {
     ? list.map((i) => `<button class="tile" data-item="${i.id}"><img src="${blobURL(i.image)}" alt="" loading="lazy">${i.favorite ? '<span class="fav">♥</span>' : ''}<span class="label">${esc(i.name)}</span></button>`).join('')
     : state.items.length
       ? '<div class="empty" style="grid-column:1/-1">Nothing here yet.</div>'
-      : `<div class="empty" style="grid-column:1/-1"><strong>Build your closet</strong>Photograph your clothes one at a time, or add photos of yourself wearing them — Drape will pick out each piece.<br><br><button class="btn primary" data-add>Add clothes</button></div>`;
+      : `<div class="empty" style="grid-column:1/-1"><strong>Build your closet</strong>Photograph your clothes one at a time, or add photos of yourself wearing them — Zazzoyance will pick out each piece.<br><br><button class="btn primary" data-add>Add clothes</button></div>`;
 }
 
 async function processPhotos(files, kind) {
@@ -568,7 +569,7 @@ function openItem(id) {
       <label class="check"><input type="checkbox" name="favorite" ${it.favorite ? 'checked' : ''}> Favourite</label>
       <label>Notes <textarea name="notes" rows="2">${esc(it.notes || '')}</textarea></label>
       <p class="stat">${it.wornCount ? `Worn ${it.wornCount} time${it.wornCount > 1 ? 's' : ''}, last ${daysSince(it.lastWorn) === 0 ? 'today' : `${daysSince(it.lastWorn)} days ago`}.` : 'Not logged as worn yet.'}
-        ${look ? ' <button type="button" class="link" data-open-look>From a look →</button>' : ''}</p>
+        ${look ? ' <button type="button" class="link" data-open-look>From a look</button>' : ''}</p>
       <div class="row sticky-actions">
         <button type="button" class="btn danger" data-delete>Delete</button>
         <span style="flex:1"></span>
@@ -853,7 +854,7 @@ async function exportData() {
   const enc = async (x) => ({ ...x, image: x.image ? await blobToDataURL(x.image) : null });
   const { apiKey, passcode, ...safeSettings } = state.settings; // never put secrets in a backup file
   const data = {
-    app: 'drape', version: 1, exportedAt: new Date().toISOString(),
+    app: 'zazzoyance', version: 1, exportedAt: new Date().toISOString(),
     items: await Promise.all(state.items.map(enc)),
     looks: await Promise.all(state.looks.map(enc)),
     settings: safeSettings,
@@ -862,7 +863,7 @@ async function exportData() {
   const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `drape-backup-${todayISO()}.json`;
+  a.download = `zazzoyance-backup-${todayISO()}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   toast('Backup downloaded.');
@@ -874,7 +875,7 @@ async function importData() {
   if (!f) return;
   try {
     const data = JSON.parse(await f.text());
-    if (data.app !== 'drape') throw new Error('not a Drape backup');
+    if (!['zazzoyance', 'drape'].includes(data.app)) throw new Error('not a Zazzoyance backup');
     toast('<span class="spinner"></span>Restoring…', 0);
     const dec = async (x) => ({ ...x, image: x.image ? await dataURLToBlob(x.image) : null });
     for (const it of data.items || []) await db.put('items', await dec(it));
@@ -889,5 +890,5 @@ async function importData() {
 
 boot().catch((err) => {
   console.error(err);
-  document.body.insertAdjacentHTML('afterbegin', `<p style="padding:16px;color:#a3322a">Drape failed to start: ${esc(err.message)}</p>`);
+  document.body.insertAdjacentHTML('afterbegin', `<p style="padding:16px;color:#a3322a">Zazzoyance failed to start: ${esc(err.message)}</p>`);
 });

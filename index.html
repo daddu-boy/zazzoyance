@@ -3,27 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Drape — your stylist</title>
-  <meta name="description" content="Photograph your clothes. Drape learns your wardrobe and tells you what to wear for the weather and the day.">
-  <meta name="theme-color" content="#f6f1ea" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#16130f" media="(prefers-color-scheme: dark)">
+  <title>Zazzoyance</title>
+  <meta name="description" content="Photograph your clothes. Zazzoyance learns your wardrobe and tells you what to wear for the weather and the day.">
+  <meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#161617" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-mark">D</span><span>Drape</span></div>
+    <div class="brand">Zazzoyance</div>
     <button class="ai-pill" id="aiPill" data-go="settings" title="AI status">…</button>
   </header>
 
   <main>
     <!-- TODAY -->
     <section class="view" id="view-today" data-view="today">
+      <div>
+        <p class="eyebrow" id="todayDate"></p>
+        <h1 class="headline">What to wear.</h1>
+      </div>
       <div class="weather card" id="weatherCard">
         <div class="muted">Finding your weather…</div>
       </div>
@@ -46,6 +47,7 @@
 
     <!-- CLOSET -->
     <section class="view" id="view-closet" data-view="closet" hidden>
+      <h1 class="headline">Closet.</h1>
       <div class="row-between">
         <div class="seg" id="closetSeg">
           <button data-tab="items" class="on">Pieces</button>
@@ -78,6 +80,7 @@
 
     <!-- SETTINGS -->
     <section class="view" id="view-settings" data-view="settings" hidden>
+      <h1 class="headline">You.</h1>
       <h2 class="h">About you</h2>
       <div class="card form">
         <label>Name <input id="setName" placeholder="Optional"></label>
@@ -117,7 +120,7 @@
         </div>
         <p class="small muted">Your wardrobe lives in this browser. Back up before clearing browser data or switching phones.</p>
       </div>
-      <p class="small muted center">Drape MVP · weather by Open-Meteo</p>
+      <p class="footnote">Zazzoyance · MVP · Weather by Open-Meteo</p>
     </section>
   </main>
 
@@ -144,7 +147,7 @@
     <div class="add-option">
       <div>
         <strong>Photos of me wearing them</strong>
-        <p class="small muted">Mirror selfies or outfit shots. Drape picks out each piece you're wearing and saves the outfit as a Look.</p>
+        <p class="small muted">Mirror selfies or outfit shots. Zazzoyance picks out each piece you're wearing and saves the outfit as a Look.</p>
       </div>
       <div class="row">
         <button class="btn primary" data-pick="person-camera">Camera</button>

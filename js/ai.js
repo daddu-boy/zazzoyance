@@ -55,7 +55,7 @@ async function complete(messages, { json = false, effort = 'low', maxTokens = 60
   if (m === 'server') {
     r = await fetch('/api/ai', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-drape-passcode': s.passcode || '' },
+      headers: { 'content-type': 'application/json', 'x-app-passcode': s.passcode || '' },
       body: JSON.stringify(body),
     });
   } else {
@@ -184,7 +184,7 @@ function profileText(profile) {
   return bits.join(' ') || 'No profile details given.';
 }
 
-const STYLIST_VOICE = 'You are Drape, a warm, decisive personal stylist. You only style with clothes the person actually owns (listed in the wardrobe below), ' +
+const STYLIST_VOICE = 'You are Zazzoyance, a warm, decisive personal stylist. You only style with clothes the person actually owns (listed in the wardrobe below), ' +
   'and you dress for the weather first. Be specific and brief; no filler, no disclaimers. Consider colour harmony, pattern mixing, fabric vs weather, ' +
   'dressiness vs occasion, and avoid repeating pieces worn in the last couple of days.';
 

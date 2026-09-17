@@ -1,21 +1,21 @@
-# Drape — a personal stylist in your phone
+# Zazzoyance — a personal stylist in your phone
 
-Photograph your clothes. Drape learns your wardrobe, checks the weather where you are, and tells you what to wear.
+Photograph your clothes. Zazzoyance learns your wardrobe, checks the weather where you are, and tells you what to wear.
 
-**Live:** https://drape-wardrobe.netlify.app — open it in Chrome on Android, then **⋮ → Add to Home screen / Install app**.
+**Live:** https://zazzoyance.netlify.app — open it in Chrome on Android, then **⋮ → Add to Home screen / Install app**.
 
 ## What it does
 
 - **Closet** — add clothes two ways:
   - *Just the clothes*: one photo per piece (a flat-lay of several works too).
-  - *Photos of me wearing them*: Drape picks out every piece you're wearing, crops each one into your closet, and keeps the full photo under **Looks**.
-- **Today** — live weather (Open-Meteo) for your location or any city, today or tomorrow. Pick the plan (work, date, wedding…) and tap **Style me** for three outfits built only from clothes you own. Tap **I'll wear this** to log it so Drape doesn't repeat it tomorrow.
+  - *Photos of me wearing them*: Zazzoyance picks out every piece you're wearing, crops each one into your closet, and keeps the full photo under **Looks**.
+- **Today** — live weather (Open-Meteo) for your location or any city, today or tomorrow. Pick the plan (work, date, wedding…) and tap **Style me** for three outfits built only from clothes you own. Tap **I'll wear this** to log it so Zazzoyance doesn't repeat it tomorrow.
 - **Stylist** — a chat stylist that knows your closet and the forecast. Ask what to pack for a trip, what goes with a piece, or send a photo of something you're thinking of buying.
 - **Works without AI** — with no key, you tag clothes yourself and a built-in rules engine (warmth vs temperature, dressiness vs occasion, rain, colour clashes, recently worn) picks outfits.
 
 ## Turning on the AI
 
-Drape uses the OpenAI API. **A ChatGPT Plus subscription does not include API access** — the API is billed separately at https://platform.openai.com (add a few dollars of credit; the default model, `gpt-5-mini`, costs a fraction of a cent per photo).
+Zazzoyance uses the OpenAI API. **A ChatGPT Plus subscription does not include API access** — the API is billed separately at https://platform.openai.com (add a few dollars of credit; the default model, `gpt-5-mini`, costs a fraction of a cent per photo).
 
 Two ways to connect:
 

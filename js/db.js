@@ -1,5 +1,5 @@
 // Tiny IndexedDB wrapper. Everything the user owns lives here, on-device.
-const DB_NAME = 'drape';
+const DB_NAME = 'zazzoyance';
 const VERSION = 1;
 let dbp;
 

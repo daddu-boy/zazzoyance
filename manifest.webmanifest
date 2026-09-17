@@ -1,13 +1,13 @@
 {
-  "name": "Drape — your stylist",
-  "short_name": "Drape",
-  "description": "Photograph your clothes. Drape tells you what to wear for the weather and the day.",
+  "name": "Zazzoyance",
+  "short_name": "Zazzoyance",
+  "description": "Photograph your clothes. Zazzoyance tells you what to wear for the weather and the day.",
   "start_url": "./#today",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f6f1ea",
-  "theme_color": "#9a4a2c",
+  "background_color": "#f5f5f7",
+  "theme_color": "#fbfbfd",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
