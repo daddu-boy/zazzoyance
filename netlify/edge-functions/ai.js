@@ -5,6 +5,9 @@
 //   APP_PASSCODE     optional — if set, the app must send this passcode (stops strangers spending your credits)
 //   OPENAI_MODEL     optional — default model, e.g. gpt-5-mini
 //
+// If OPENAI_API_KEY is not set, Netlify's AI Gateway may inject one (with OPENAI_BASE_URL) automatically,
+// billed to Netlify credits. Setting your own OPENAI_API_KEY overrides that.
+//
 // An edge function (not a regular Netlify function) because vision calls can take longer than
 // the 10-second limit on regular functions; edge functions only count CPU time, not waiting.
 
@@ -18,11 +21,19 @@ export default async (request) => {
   const key = Netlify.env.get('OPENAI_API_KEY');
   const passcode = Netlify.env.get('APP_PASSCODE');
   const defaultModel = Netlify.env.get('OPENAI_MODEL') || 'gpt-5-mini';
+  const baseURL = (Netlify.env.get('OPENAI_BASE_URL') || 'https://api.openai.com/v1').replace(/\/$/, '');
 
   if (request.method === 'GET') {
     return json({ configured: !!key, passcode: !!passcode, model: defaultModel });
   }
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  // Browsers always send Origin on POST; only accept calls from this site (and its deploy previews).
+  // This stops other websites using the endpoint, not a determined script — use APP_PASSCODE for that.
+  const origin = request.headers.get('origin');
+  const host = new URL(request.url).hostname;
+  if (!origin || !(new URL(origin).hostname === host || /(^|\.)zazzoyance\.netlify\.app$/.test(new URL(origin).hostname))) {
+    return json({ error: 'Forbidden.' }, 403);
+  }
   if (!key) return json({ error: 'The server has no OpenAI key configured.' }, 503);
   if (passcode && request.headers.get('x-app-passcode') !== passcode) {
     return json({ error: 'Wrong or missing passcode. Enter it in the You tab.' }, 401);
@@ -44,7 +55,7 @@ export default async (request) => {
   if (payload.max_completion_tokens) payload.max_completion_tokens = Math.min(Number(payload.max_completion_tokens) || 4000, 8000);
   if (payload.max_tokens) payload.max_tokens = Math.min(Number(payload.max_tokens) || 1500, 2000);
 
-  const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
+  const upstream = await fetch(`${baseURL}/chat/completions`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
     body: JSON.stringify(payload),

@@ -13,21 +13,21 @@ Photograph your clothes. Zazzoyance learns your wardrobe, checks the weather whe
 - **Stylist** — a chat stylist that knows your closet and the forecast. Ask what to pack for a trip, what goes with a piece, or send a photo of something you're thinking of buying.
 - **Works without AI** — with no key, you tag clothes yourself and a built-in rules engine (warmth vs temperature, dressiness vs occasion, rain, colour clashes, recently worn) picks outfits.
 
-## Turning on the AI
+## The AI
 
-Zazzoyance uses the OpenAI API. **A ChatGPT Plus subscription does not include API access** — the API is billed separately at https://platform.openai.com (add a few dollars of credit; the default model, `gpt-5-mini`, costs a fraction of a cent per photo).
+**It already works on the live site.** Netlify's AI Gateway supplies an OpenAI key to the site's edge function automatically, and usage is billed to your **Netlify credits**. You don't need an OpenAI account to start. The default model is `gpt-5-mini`, which costs a fraction of a cent per photo.
 
-Two ways to connect:
+Settings, in Netlify → *Site configuration → Environment variables*:
 
-1. **For everyone who uses your site (recommended).** In Netlify → *Site configuration → Environment variables*, add:
-   | Variable | Value |
-   |---|---|
-   | `OPENAI_API_KEY` | your key (`sk-…`) — **required** |
-   | `APP_PASSCODE` | any word — **strongly recommended**, otherwise anyone with the link can spend your credit |
-   | `OPENAI_MODEL` | optional, defaults to `gpt-5-mini` |
+| Variable | What it does |
+|---|---|
+| `APP_PASSCODE` | **Recommended before you share the link.** Users enter it once in the **You** tab. Without it, anyone who finds the site can use your AI credits. |
+| `OPENAI_API_KEY` | Optional. Use your own OpenAI account instead of Netlify's gateway (billed at platform.openai.com). **A ChatGPT Plus subscription does not include API access.** |
+| `OPENAI_MODEL` | Optional. Defaults to `gpt-5-mini`. |
 
-   Then redeploy (`./deploy.sh`). The key stays on the server (`netlify/edge-functions/ai.js`). Users enter the passcode once in the **You** tab.
-2. **Just for one phone.** Paste an API key in the **You** tab. It is stored only in that browser and the phone talks to OpenAI directly.
+Redeploy after changing these (`./deploy.sh`). The server code is `netlify/edge-functions/ai.js`. It only accepts calls from this site.
+
+A person can also paste their own OpenAI key in the **You** tab. It stays in that browser, and the phone then talks to OpenAI directly.
 
 ## Where data lives
 
