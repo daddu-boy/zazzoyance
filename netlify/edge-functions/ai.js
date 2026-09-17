@@ -1,30 +1,30 @@
-// Server-side proxy to OpenAI, so phones don't need their own API key.
+// Server-side proxy to Google Gemini (Google AI Studio key), so phones don't need their own key.
 //
-// Set these in Netlify → Site configuration → Environment variables:
-//   OPENAI_API_KEY   required — your key from platform.openai.com
-//   APP_PASSCODE     optional — if set, the app must send this passcode (stops strangers spending your credits)
-//   OPENAI_MODEL     optional — default model, e.g. gpt-5-mini
+// Set these in Netlify → Project configuration → Environment variables:
+//   GOOGLE_AI_STUDIO_KEY  required — your key from aistudio.google.com/apikey
+//   APP_PASSCODE          optional — if set, the app must send this passcode
+//   GEMINI_MODEL          optional — default model, e.g. gemini-2.5-flash
 //
-// If OPENAI_API_KEY is not set, Netlify's AI Gateway may inject one (with OPENAI_BASE_URL) automatically,
-// billed to Netlify credits. Setting your own OPENAI_API_KEY overrides that.
+// Deliberately NOT read: OPENAI_* / GEMINI_API_KEY / NETLIFY_AI_GATEWAY_*. Netlify's AI Gateway injects
+// those automatically and bills Netlify credits; this app only ever uses your own Google key.
 //
 // An edge function (not a regular Netlify function) because vision calls can take longer than
 // the 10-second limit on regular functions; edge functions only count CPU time, not waiting.
 
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 const MAX_BODY = 4 * 1024 * 1024;
-const ALLOWED_KEYS = new Set(['model', 'messages', 'response_format', 'reasoning_effort', 'max_completion_tokens', 'max_tokens', 'temperature']);
+const ALLOWED_KEYS = new Set(['model', 'messages', 'response_format', 'reasoning_effort', 'max_tokens', 'temperature']);
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
 export default async (request) => {
-  const key = Netlify.env.get('OPENAI_API_KEY');
+  const key = Netlify.env.get('GOOGLE_AI_STUDIO_KEY');
   const passcode = Netlify.env.get('APP_PASSCODE');
-  const defaultModel = Netlify.env.get('OPENAI_MODEL') || 'gpt-5-mini';
-  const baseURL = (Netlify.env.get('OPENAI_BASE_URL') || 'https://api.openai.com/v1').replace(/\/$/, '');
+  const defaultModel = Netlify.env.get('GEMINI_MODEL') || 'gemini-2.5-flash';
 
   if (request.method === 'GET') {
-    return json({ configured: !!key, passcode: !!passcode, model: defaultModel });
+    return json({ configured: !!key, passcode: !!passcode, model: defaultModel, provider: 'gemini' });
   }
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   // Browsers always send Origin on POST; only accept calls from this site (and its deploy previews).
@@ -34,7 +34,7 @@ export default async (request) => {
   if (!origin || !(new URL(origin).hostname === host || /(^|\.)zazzoyance\.netlify\.app$/.test(new URL(origin).hostname))) {
     return json({ error: 'Forbidden.' }, 403);
   }
-  if (!key) return json({ error: 'The server has no OpenAI key configured.' }, 503);
+  if (!key) return json({ error: 'The server has no Google AI Studio key configured.' }, 503);
   if (passcode && request.headers.get('x-app-passcode') !== passcode) {
     return json({ error: 'Wrong or missing passcode. Enter it in the You tab.' }, 401);
   }
@@ -49,20 +49,20 @@ export default async (request) => {
   }
   if (!Array.isArray(body.messages) || body.messages.length > 40) return json({ error: 'Invalid messages.' }, 400);
 
-  // Only forward the fields the app uses.
+  // Only forward the fields the app uses, and only Gemini models.
   const payload = Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED_KEYS.has(k)));
-  payload.model = typeof payload.model === 'string' && payload.model ? payload.model : defaultModel;
-  if (payload.max_completion_tokens) payload.max_completion_tokens = Math.min(Number(payload.max_completion_tokens) || 4000, 8000);
-  if (payload.max_tokens) payload.max_tokens = Math.min(Number(payload.max_tokens) || 1500, 2000);
+  payload.model = typeof payload.model === 'string' && /^gemini-/.test(payload.model) ? payload.model : defaultModel;
+  payload.max_tokens = Math.min(Number(payload.max_tokens) || 4096, 8192);
 
-  const upstream = await fetch(`${baseURL}/chat/completions`, {
+  const upstream = await fetch(GEMINI_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
     body: JSON.stringify(payload),
   });
-  return new Response(upstream.body, {
+  const text = await upstream.text();
+  return new Response(text, {
     status: upstream.status,
-    headers: { 'content-type': upstream.headers.get('content-type') || 'application/json', 'cache-control': 'no-store' },
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
 };
 

@@ -13,37 +13,42 @@ Photograph your clothes. Zazzoyance learns your wardrobe, checks the weather whe
 - **Stylist** — a chat stylist that knows your closet and the forecast. Ask what to pack for a trip, what goes with a piece, or send a photo of something you're thinking of buying.
 - **Works without AI** — with no key, you tag clothes yourself and a built-in rules engine (warmth vs temperature, dressiness vs occasion, rain, colour clashes, recently worn) picks outfits.
 
-## The AI
+## The AI (Google Gemini)
 
-**It already works on the live site.** Netlify's AI Gateway supplies an OpenAI key to the site's edge function automatically, and usage is billed to your **Netlify credits**. You don't need an OpenAI account to start. The default model is `gpt-5-mini`, which costs a fraction of a cent per photo.
+Zazzoyance uses **Google Gemini** with your own **Google AI Studio** key. It never uses OpenAI or Netlify's AI Gateway, so no Netlify credits are spent on AI.
 
-Settings, in Netlify → *Site configuration → Environment variables*:
+1. Create a key at https://aistudio.google.com/apikey.
+2. In Netlify, go to **Project configuration → Environment variables** and add:
 
-| Variable | What it does |
-|---|---|
-| `APP_PASSCODE` | **Recommended before you share the link.** Users enter it once in the **You** tab. Without it, anyone who finds the site can use your AI credits. |
-| `OPENAI_API_KEY` | Optional. Use your own OpenAI account instead of Netlify's gateway (billed at platform.openai.com). **A ChatGPT Plus subscription does not include API access.** |
-| `OPENAI_MODEL` | Optional. Defaults to `gpt-5-mini`. |
+   | Variable | What it does |
+   |---|---|
+   | `GOOGLE_AI_STUDIO_KEY` | **Required.** Your AI Studio key (`AIza…`). Mark it as a secret. |
+   | `APP_PASSCODE` | **Recommended.** Users enter it once in the **You** tab. Without it, anyone with the link can use your key. |
+   | `GEMINI_MODEL` | Optional. Defaults to `gemini-2.5-flash`. |
 
-Redeploy after changing these (`./deploy.sh`). The server code is `netlify/edge-functions/ai.js`. It only accepts calls from this site.
+3. Redeploy (`./deploy.sh`). New environment variables only take effect after a deploy.
 
-A person can also paste their own OpenAI key in the **You** tab. It stays in that browser, and the phone then talks to OpenAI directly.
+The key stays on the server (`netlify/edge-functions/ai.js`), which only accepts calls from this site.
+
+A person can also paste their own AI Studio key in the **You** tab. It stays in that browser, and the phone talks to Gemini directly.
+
+**Free tier:** AI Studio keys on the free tier have daily request limits, and Google may use free-tier prompts to improve its products. Turn on billing in AI Studio to raise the limits and get paid-tier data terms.
 
 ## Where data lives
 
-Everything — photos, closet, looks, chat — is stored **on the device** (IndexedDB). There is no database or account yet. Use **You → Back up** to download a JSON backup (API keys are never included) and **Restore** on another phone. Photos leave the phone only when AI is on, to be read by OpenAI.
+Everything — photos, closet, looks, chat — is stored **on the device** (IndexedDB). There is no database or account yet. Use **You → Back up** to download a JSON backup (API keys are never included) and **Restore** on another phone. Photos leave the phone only when AI is on, to be read by Google Gemini.
 
 ## Project layout
 
 ```
 index.html, styles.css        the app shell (no build step)
 js/app.js                     UI and flows
-js/ai.js                      OpenAI calls: photo tagging, outfit picks, chat
+js/ai.js                      Gemini calls: photo tagging, outfit picks, chat
 js/stylist.js                 offline stylist (rules engine)
 js/weather.js                 Open-Meteo weather + city search
 js/db.js                      IndexedDB storage
 sw.js, manifest.webmanifest   installable PWA + offline shell
-netlify/edge-functions/ai.js  server-side OpenAI proxy (/api/ai)
+netlify/edge-functions/ai.js  server-side Gemini proxy (/api/ai)
 dev-server.mjs                local server (mock AI with MOCK_AI=1)
 deploy.sh                     deploy to Netlify
 ```
@@ -52,7 +57,7 @@ deploy.sh                     deploy to Netlify
 
 ```bash
 MOCK_AI=1 node dev-server.mjs          # fake AI replies, no credit used
-OPENAI_API_KEY=sk-... node dev-server.mjs   # real AI
+GOOGLE_AI_STUDIO_KEY=AIza... node dev-server.mjs   # real AI
 ```
 
 Open http://localhost:8130.

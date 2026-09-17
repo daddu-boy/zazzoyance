@@ -67,12 +67,12 @@ async function refreshAi() {
   pill.textContent = state.aiMode === 'off' ? 'AI off' : 'AI stylist on';
   const srv = await ai.checkServer();
   $('#aiExplain').textContent = state.aiMode === 'server'
-    ? 'Connected through this site\'s shared OpenAI account. Nothing to set up. You can still paste your own key below to use yours instead.'
+    ? 'Connected through this site\'s Google Gemini key. Nothing to set up. You can still paste your own key below to use yours instead.'
     : state.aiMode === 'key'
-      ? 'Using your own OpenAI key from this phone.'
+      ? 'Using your own Google AI Studio key from this phone.'
       : srv.configured && srv.passcode
-        ? 'This site has AI, but it\'s locked. Enter the passcode the owner gave you — or paste your own OpenAI key.'
-        : 'AI is off. Zazzoyance still works — you tag clothes yourself and a built-in stylist picks outfits. Paste an OpenAI API key to switch on photo recognition and the chat stylist.';
+        ? 'This site has AI, but it\'s locked. Enter the passcode the owner gave you — or paste your own Google AI Studio key.'
+        : 'AI is off. Zazzoyance still works — you tag clothes yourself and a built-in stylist picks outfits. Paste a Google AI Studio key (free at aistudio.google.com) to switch on photo recognition and the chat stylist.';
 }
 
 // ---------------- navigation ----------------
@@ -797,7 +797,7 @@ function offlineChat(text) {
         o.items.map((i) => `- ${i.name} [[${i.id}]]`).join('\n') + `\n\n${o.why}${missing ? `\n\n${missing}` : ''}`;
     }
   }
-  return 'The chat stylist needs AI switched on — open the You tab and paste an OpenAI API key. Meanwhile, the Today tab can still pick outfits for you.';
+  return 'The chat stylist needs AI switched on — open the You tab and paste a Google AI Studio key. Meanwhile, the Today tab can still pick outfits for you.';
 }
 
 // ---------------- settings ----------------

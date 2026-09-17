@@ -1,5 +1,5 @@
 // Local dev server: `node dev-server.mjs` → http://localhost:8130
-// Serves the static app. /api/ai forwards to OpenAI if OPENAI_API_KEY is set,
+// Serves the static app. /api/ai forwards to Gemini if GOOGLE_AI_STUDIO_KEY is set,
 // or returns canned replies with MOCK_AI=1 (for testing the UI without spending credits).
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -8,7 +8,7 @@ import { extname, join, normalize } from 'node:path';
 const ROOT = new URL('.', import.meta.url).pathname;
 const PORT = Number(process.env.PORT) || 8130;
 const MOCK = process.env.MOCK_AI === '1';
-const KEY = process.env.OPENAI_API_KEY;
+const KEY = process.env.GOOGLE_AI_STUDIO_KEY;
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
   '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png' };
 
@@ -45,13 +45,13 @@ function mock(body) {
 http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (url.pathname === '/api/ai') {
-    if (req.method === 'GET') return send(res, 200, { configured: MOCK || !!KEY, passcode: false, model: 'gpt-5-mini' });
+    if (req.method === 'GET') return send(res, 200, { configured: MOCK || !!KEY, passcode: false, model: 'gemini-2.5-flash', provider: 'gemini' });
     let raw = '';
     for await (const c of req) raw += c;
     const body = JSON.parse(raw);
     if (MOCK) { await new Promise((r) => setTimeout(r, 600)); return send(res, 200, mock(body)); }
-    if (!KEY) return send(res, 503, { error: 'No OPENAI_API_KEY on the dev server.' });
-    const up = await fetch('https://api.openai.com/v1/chat/completions', {
+    if (!KEY) return send(res, 503, { error: 'No GOOGLE_AI_STUDIO_KEY on the dev server.' });
+    const up = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
       method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${KEY}` }, body: raw,
     });
     return send(res, up.status, await up.text());

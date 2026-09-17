@@ -1,12 +1,13 @@
-// AI stylist. Two routes to OpenAI, tried in this order:
-//   1. The host's server key, via /api/ai (Netlify edge function) — nothing to set up on the phone.
-//   2. A key the user pasted into Settings — the browser calls OpenAI directly.
+// AI stylist, powered by Google Gemini (a Google AI Studio key). Two routes, tried in this order:
+//   1. A key the user pasted into the You tab — the browser calls Gemini directly.
+//   2. The site owner's key, via /api/ai (Netlify edge function) — nothing to set up on the phone.
 // If neither is available, the app falls back to the offline stylist.
 import { kvGet } from './db.js';
 import { blobToDataURL, daysSince } from './util.js';
 import { CATEGORIES, CATEGORY_HINT, OCCASIONS, SEASONS } from './stylist.js';
 
-const DEFAULT_MODEL = 'gpt-5-mini';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 let serverInfo = null;
 
 export async function settings() {
@@ -18,7 +19,7 @@ export async function checkServer(force = false) {
   try {
     const r = await fetch('/api/ai', { method: 'GET', cache: 'no-store' });
     const j = r.ok ? await r.json() : {};
-    serverInfo = { configured: !!j.configured, passcode: !!j.passcode, model: j.model || null };
+    serverInfo = { configured: !!j.configured && j.provider === 'gemini', passcode: !!j.passcode, model: j.model || null };
   } catch {
     serverInfo = { configured: false, passcode: false, model: null };
   }
@@ -28,59 +29,50 @@ export async function checkServer(force = false) {
 /** 'server' | 'key' | 'off' */
 export async function mode() {
   const s = await settings();
-  if (s.apiKey) return 'key'; // a personal key always wins — the user chose it
+  // A personal key always wins — the user chose it. (Skip OpenAI keys left from the old version.)
+  if (s.apiKey && !s.apiKey.startsWith('sk-')) return 'key';
   const srv = await checkServer();
   if (srv.configured && (!srv.passcode || s.passcode)) return 'server';
   return 'off';
 }
 
-const isReasoning = (m) => /^(gpt-5|o\d)/.test(m);
+function errorMessage(j, status) {
+  const e = Array.isArray(j) ? j[0]?.error : j?.error;
+  return String(e?.message || (typeof e === 'string' ? e : '') || `AI request failed (${status})`).slice(0, 240);
+}
 
-async function complete(messages, { json = false, effort = 'low', maxTokens = 6000 } = {}) {
+async function complete(messages, { json = false, maxTokens = 4096 } = {}) {
   const s = await settings();
   const m = await mode();
   if (m === 'off') throw new AIOff();
-  const model = s.model?.trim() || (m === 'server' && serverInfo?.model) || DEFAULT_MODEL;
-  const body = { model, messages };
-  if (json) body.response_format = { type: 'json_object' };
-  if (isReasoning(model)) {
-    body.reasoning_effort = effort;
-    body.max_completion_tokens = maxTokens;
-  } else {
-    body.max_tokens = Math.min(maxTokens, 2000);
-    body.temperature = 0.7;
-  }
+  // Ignore a model name left over from the OpenAI version of the app.
+  const chosen = /^gemini-/.test(s.model?.trim() || '') ? s.model.trim() : '';
+  const model = chosen || (m === 'server' && serverInfo?.model) || DEFAULT_MODEL;
+  // Thinking is kept low: styling and tagging don't need deep reasoning, and it keeps replies quick.
+  const body = { model, messages, max_tokens: maxTokens, reasoning_effort: 'low' };
 
   let r;
-  if (m === 'server') {
-    r = await fetch('/api/ai', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-app-passcode': s.passcode || '' },
-      body: JSON.stringify(body),
-    });
-  } else {
-    try {
-      r = await fetch('https://api.openai.com/v1/chat/completions', {
+  try {
+    r = m === 'server'
+      ? await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-app-passcode': s.passcode || '' },
+        body: JSON.stringify(body),
+      })
+      : await fetch(GEMINI_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${s.apiKey}` },
         body: JSON.stringify(body),
       });
-    } catch {
-      // OpenAI's rejections (bad key, no credit) carry no CORS headers, so the browser only sees a network error.
-      throw new Error(navigator.onLine === false
-        ? 'you are offline'
-        : 'OpenAI refused the request — check the API key and that the account has credit');
-    }
+  } catch {
+    throw new Error(navigator.onLine === false ? 'you are offline' : 'could not reach the AI service');
   }
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    const msg = j?.error?.message || j?.error || `AI request failed (${r.status})`;
-    throw new Error(String(msg).slice(0, 240));
-  }
+  if (!r.ok) throw new Error(errorMessage(j, r.status));
   const text = j.choices?.[0]?.message?.content ?? '';
   if (!json) return text;
   try {
-    return JSON.parse(text);
+    return JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ''));
   } catch {
     const m2 = text.match(/\{[\s\S]*\}/);
     if (m2) return JSON.parse(m2[0]);
@@ -93,7 +85,7 @@ export class AIOff extends Error {
 }
 
 export async function ping() {
-  const out = await complete([{ role: 'user', content: 'Reply with the single word: ready' }], { effort: 'minimal', maxTokens: 400 });
+  const out = await complete([{ role: 'user', content: 'Reply with the single word: ready' }], { maxTokens: 1000 });
   return out.trim();
 }
 
@@ -127,7 +119,7 @@ export async function tagPhoto(blob, kind) {
       role: 'system',
       content: `You catalogue a person's wardrobe from photos. Categories: ${Object.entries(CATEGORY_HINT).map(([k, v]) => `${k} (${v})`).join('; ')}. ` +
         'Indian and global clothing are both common — name pieces accurately (kurta, saree, dupatta, nehru jacket, etc.). ' +
-        `Reply with JSON only, shaped exactly like:\n${TAG_SCHEMA}\nIf there is no clothing in the image, return {"look":"","items":[]}.`,
+        `Reply with raw JSON only (no markdown fences), shaped exactly like:\n${TAG_SCHEMA}\nIf there is no clothing in the image, return {"look":"","items":[]}.`,
     },
     {
       role: 'user',
@@ -136,7 +128,7 @@ export async function tagPhoto(blob, kind) {
         { type: 'image_url', image_url: { url, detail: 'low' } },
       ],
     },
-  ], { json: true, effort: 'minimal' });
+  ], { json: true });
   return {
     look: typeof out.look === 'string' ? out.look : '',
     items: Array.isArray(out.items) ? out.items.map(cleanItem) : [],
@@ -193,11 +185,11 @@ export async function suggestOutfits({ items, profile, weatherText, occasion, ex
     {
       role: 'system',
       content: `${STYLIST_VOICE}\n\nAbout them: ${profileText(profile)}\n\nWardrobe (id | name | category | colours | fabric | warmth 1-5 | formality 1-5 | occasions | …):\n${catalogue(items)}\n\n` +
-        'Reply with JSON only: {"outfits":[{"title":"short evocative name","itemIds":["ids from the wardrobe"],"why":"1-2 sentences on why it works for this weather and plan","tip":"one styling tip"}],"missing":"one sentence naming a gap in their wardrobe for this situation, or empty string"}. ' +
+        'Reply with raw JSON only (no markdown fences): {"outfits":[{"title":"short evocative name","itemIds":["ids from the wardrobe"],"why":"1-2 sentences on why it works for this weather and plan","tip":"one styling tip"}],"missing":"one sentence naming a gap in their wardrobe for this situation, or empty string"}. ' +
         'Give 3 distinct outfits. Each needs either a top + bottom or a one-piece, plus footwear if they own any. Only use ids that appear in the wardrobe.',
     },
     { role: 'user', content: `Weather: ${weatherText}\nPlan: ${occasion.label}.${extra ? `\nAlso: ${extra}` : ''}` },
-  ], { json: true, effort: 'low' });
+  ], { json: true });
   const byId = new Map(items.map((i) => [i.id, i]));
   const outfits = (out.outfits || []).map((o) => ({
     title: String(o.title || 'Outfit'),
@@ -230,5 +222,5 @@ export async function chatReply({ history, items, profile, weatherText, image })
       msgs.push({ role: m.role, content: m.text + (m.hadImage && !isLast ? ' [shared a photo]' : '') });
     }
   }
-  return complete(msgs, { effort: 'low' });
+  return complete(msgs);
 }
