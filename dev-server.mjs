@@ -24,11 +24,11 @@ function mock(body) {
     const person = JSON.stringify(body.messages[1].content).includes('person wearing');
     const items = person
       ? [
-          { name: 'White linen shirt', category: 'top', colors: ['white'], pattern: 'solid', material: 'linen', warmth: 1, formality: 3, occasions: ['work', 'casual'], seasons: ['summer'], waterproof: false, notes: 'Relaxed fit', bbox: [0.25, 0.15, 0.75, 0.5] },
-          { name: 'Navy chinos', category: 'bottom', colors: ['navy'], pattern: 'solid', material: 'cotton', warmth: 2, formality: 3, occasions: ['work'], seasons: ['summer', 'spring'], waterproof: false, notes: '', bbox: [0.3, 0.48, 0.7, 0.9] },
-          { name: 'Tan loafers', category: 'footwear', colors: ['tan'], pattern: 'solid', material: 'suede', warmth: 2, formality: 3, occasions: ['work', 'date'], seasons: [], waterproof: false, notes: '', bbox: [0.3, 0.88, 0.7, 1] },
+          { name: 'White linen shirt', category: 'top', colors: ['white'], pattern: 'solid', material: 'linen', warmth: 1, formality: 3, occasions: ['work', 'casual'], seasons: ['summer'], waterproof: false, notes: 'Relaxed fit', box_2d: [150, 250, 500, 750] },
+          { name: 'Navy chinos', category: 'bottom', colors: ['navy'], pattern: 'solid', material: 'cotton', warmth: 2, formality: 3, occasions: ['work'], seasons: ['summer', 'spring'], waterproof: false, notes: '', box_2d: [480, 300, 900, 700] },
+          { name: 'Tan loafers', category: 'footwear', colors: ['tan'], pattern: 'solid', material: 'suede', warmth: 2, formality: 3, occasions: ['work', 'date'], seasons: [], waterproof: false, notes: '', box_2d: [880, 300, 1000, 700] },
         ]
-      : [{ name: 'Olive bomber jacket', category: 'layer', colors: ['olive'], pattern: 'solid', material: 'nylon', warmth: 3, formality: 2, occasions: ['casual', 'travel'], seasons: ['autumn', 'winter'], waterproof: true, notes: 'Ribbed cuffs', bbox: [0.1, 0.1, 0.9, 0.9] }];
+      : [{ name: 'Olive bomber jacket', category: 'layer', colors: ['olive'], pattern: 'solid', material: 'nylon', warmth: 3, formality: 2, occasions: ['casual', 'travel'], seasons: ['autumn', 'winter'], waterproof: true, notes: 'Ribbed cuffs', box_2d: [100, 100, 900, 900] }];
     return reply(JSON.stringify({ look: person ? 'Smart-casual summer office look' : '', items }));
   }
   const ids = [...sys.matchAll(/^(\w+) \| /gm)].map((m) => m[1]);
@@ -45,7 +45,7 @@ function mock(body) {
 http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (url.pathname === '/api/ai') {
-    if (req.method === 'GET') return send(res, 200, { configured: MOCK || !!KEY, passcode: false, model: 'gemini-2.5-flash', provider: 'gemini' });
+    if (req.method === 'GET') return send(res, 200, { configured: MOCK || !!KEY, passcode: false, model: 'gemini-3.6-flash', provider: 'gemini' });
     let raw = '';
     for await (const c of req) raw += c;
     const body = JSON.parse(raw);

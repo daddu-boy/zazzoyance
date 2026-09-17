@@ -24,7 +24,7 @@ Zazzoyance uses **Google Gemini** with your own **Google AI Studio** key. It nev
    |---|---|
    | `GOOGLE_AI_STUDIO_KEY` | **Required.** Your AI Studio key (`AIza…`). Mark it as a secret. |
    | `APP_PASSCODE` | **Recommended.** Users enter it once in the **You** tab. Without it, anyone with the link can use your key. |
-   | `GEMINI_MODEL` | Optional. Defaults to `gemini-2.5-flash`. |
+   | `GEMINI_MODEL` | Optional. Defaults to `gemini-3.6-flash`. (`gemini-2.5-flash` is no longer available to new AI Studio keys.) |
 
 3. Redeploy (`./deploy.sh`). New environment variables only take effect after a deploy.
 

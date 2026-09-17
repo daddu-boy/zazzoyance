@@ -3,7 +3,7 @@
 // Set these in Netlify → Project configuration → Environment variables:
 //   GOOGLE_AI_STUDIO_KEY  required — your key from aistudio.google.com/apikey
 //   APP_PASSCODE          optional — if set, the app must send this passcode
-//   GEMINI_MODEL          optional — default model, e.g. gemini-2.5-flash
+//   GEMINI_MODEL          optional — default model, e.g. gemini-3.6-flash
 //
 // Deliberately NOT read: OPENAI_* / GEMINI_API_KEY / NETLIFY_AI_GATEWAY_*. Netlify's AI Gateway injects
 // those automatically and bills Netlify credits; this app only ever uses your own Google key.
@@ -21,7 +21,7 @@ const json = (body, status = 200) =>
 export default async (request) => {
   const key = Netlify.env.get('GOOGLE_AI_STUDIO_KEY');
   const passcode = Netlify.env.get('APP_PASSCODE');
-  const defaultModel = Netlify.env.get('GEMINI_MODEL') || 'gemini-2.5-flash';
+  const defaultModel = Netlify.env.get('GEMINI_MODEL') || 'gemini-3.6-flash';
 
   if (request.method === 'GET') {
     return json({ configured: !!key, passcode: !!passcode, model: defaultModel, provider: 'gemini' });

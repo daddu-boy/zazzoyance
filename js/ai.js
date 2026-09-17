@@ -6,7 +6,7 @@ import { kvGet } from './db.js';
 import { blobToDataURL, daysSince } from './util.js';
 import { CATEGORIES, CATEGORY_HINT, OCCASIONS, SEASONS } from './stylist.js';
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-3.6-flash';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 let serverInfo = null;
 
@@ -41,15 +41,15 @@ function errorMessage(j, status) {
   return String(e?.message || (typeof e === 'string' ? e : '') || `AI request failed (${status})`).slice(0, 240);
 }
 
-async function complete(messages, { json = false, maxTokens = 4096 } = {}) {
+async function complete(messages, { json = false, maxTokens = 4096, effort = 'low' } = {}) {
   const s = await settings();
   const m = await mode();
   if (m === 'off') throw new AIOff();
   // Ignore a model name left over from the OpenAI version of the app.
   const chosen = /^gemini-/.test(s.model?.trim() || '') ? s.model.trim() : '';
   const model = chosen || (m === 'server' && serverInfo?.model) || DEFAULT_MODEL;
-  // Thinking is kept low: styling and tagging don't need deep reasoning, and it keeps replies quick.
-  const body = { model, messages, max_tokens: maxTokens, reasoning_effort: 'low' };
+  // Thinking is kept low: 'minimal' answers in ~2s, 'low' in ~5s on gemini-3.6-flash.
+  const body = { model, messages, max_tokens: maxTokens, reasoning_effort: effort };
 
   let r;
   try {
@@ -85,7 +85,7 @@ export class AIOff extends Error {
 }
 
 export async function ping() {
-  const out = await complete([{ role: 'user', content: 'Reply with the single word: ready' }], { maxTokens: 1000 });
+  const out = await complete([{ role: 'user', content: 'Reply with the single word: ready' }], { maxTokens: 1000, effort: 'minimal' });
   return out.trim();
 }
 
@@ -105,7 +105,7 @@ const TAG_SCHEMA = `{
     "seasons": subset of ${JSON.stringify(SEASONS)},
     "waterproof": true/false,
     "notes": "fit, styling notes, anything distinctive (max 20 words)",
-    "bbox": [x0, y0, x1, y1] normalised 0-1 bounding box of this piece in the image
+    "box_2d": [ymin, xmin, ymax, xmax] bounding box of this piece, each value 0-1000
   }]
 }`;
 
@@ -128,7 +128,7 @@ export async function tagPhoto(blob, kind) {
         { type: 'image_url', image_url: { url, detail: 'low' } },
       ],
     },
-  ], { json: true });
+  ], { json: true, effort: 'minimal' });
   return {
     look: typeof out.look === 'string' ? out.look : '',
     items: Array.isArray(out.items) ? out.items.map(cleanItem) : [],
@@ -140,6 +140,13 @@ const clamp = (n, d = 3) => {
   return Number.isFinite(v) ? Math.min(5, Math.max(1, v)) : d;
 };
 const arr = (a) => (Array.isArray(a) ? a.map((x) => String(x).toLowerCase().trim()).filter(Boolean) : []);
+
+// Gemini gives boxes as [ymin, xmin, ymax, xmax] on a 0-1000 scale; the app crops with [x0, y0, x1, y1] in 0-1.
+function toBox(b) {
+  if (!Array.isArray(b) || b.length !== 4) return null;
+  const [y0, x0, y1, x1] = b.map((n) => Number(n) / 1000);
+  return [x0, y0, x1, y1];
+}
 
 export function cleanItem(x = {}) {
   return {
@@ -154,7 +161,7 @@ export function cleanItem(x = {}) {
     seasons: arr(x.seasons).filter((o) => SEASONS.includes(o)),
     waterproof: !!x.waterproof,
     notes: String(x.notes || '').slice(0, 200),
-    bbox: Array.isArray(x.bbox) ? x.bbox.map(Number) : null,
+    bbox: toBox(x.box_2d),
   };
 }
 

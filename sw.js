@@ -1,5 +1,5 @@
 // App-shell cache so Zazzoyance opens instantly and works offline (closet, looks, built-in stylist).
-const VERSION = 'zazzoyance-v3';
+const VERSION = 'zazzoyance-v4';
 const SHELL = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest',
   'js/app.js', 'js/ai.js', 'js/db.js', 'js/stylist.js', 'js/util.js', 'js/weather.js',
